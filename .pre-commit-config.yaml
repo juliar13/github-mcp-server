@@ -1,0 +1,107 @@
+# Pre-commit hooks configuration
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        description: Trim trailing whitespace
+      - id: end-of-file-fixer
+        description: Ensure files end with a newline
+      - id: check-yaml
+        description: Check YAML files syntax
+      - id: check-json
+        description: Check JSON files syntax
+      - id: check-merge-conflict
+        description: Check for merge conflict markers
+      - id: check-added-large-files
+        description: Prevent large files from being committed
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+        description: Check for case conflicts in filenames
+      - id: mixed-line-ending
+        description: Replace mixed line endings
+
+  # TypeScript/JavaScript formatting with Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        description: Format code with Prettier
+        files: \.(ts|js|json|md|yaml|yml)$
+        args: [--write]
+
+  # ESLint for TypeScript/JavaScript
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        description: Run ESLint
+        files: \.(ts|js)$
+        types: [file]
+        additional_dependencies:
+          - '@typescript-eslint/eslint-plugin@^7.0.0'
+          - '@typescript-eslint/parser@^7.0.0'
+          - 'eslint@^8.57.0'
+          - 'typescript@^5.3.0'
+
+  # Security checks with gitleaks
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+        description: Detect secrets and credentials
+
+  # Branch protection
+  - repo: local
+    hooks:
+      - id: protect-main-branch
+        name: Protect main branch
+        entry: bash -c 'BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown"); if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then echo "🚫 Direct commits to $BRANCH branch are not allowed!"; echo "💡 Please create a feature branch and submit a Pull Request:"; echo "   git checkout -b feature/your-feature-name"; echo "   git add ."; echo "   git commit -m \"Your commit message\""; echo "   git push origin feature/your-feature-name"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        description: Prevent direct commits to main/master branch
+
+  # TypeScript type checking
+  - repo: local
+    hooks:
+      - id: typescript-check
+        name: TypeScript type check
+        entry: npx tsc --noEmit
+        language: system
+        files: \.(ts)$
+        pass_filenames: false
+        description: Run TypeScript compiler for type checking
+
+  # Custom security checks
+  - repo: local
+    hooks:
+      - id: check-secrets
+        name: Check for secrets in code
+        entry: bash -c 'if grep -r "ghp_[a-zA-Z0-9]" --include="*.ts" --include="*.js" --include="*.json" src/ package.json 2>/dev/null | grep -v "mock-token" | grep -v "test-token" | grep -v "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" | grep -v "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"; then echo "❌ Found potential GitHub tokens in code"; exit 1; else echo "✅ No secrets found"; fi'
+        language: system
+        files: \.(ts|js|json)$
+        pass_filenames: false
+        description: Check for hardcoded secrets
+
+  # Package.json validation
+  - repo: local
+    hooks:
+      - id: npm-audit
+        name: NPM security audit
+        entry: npm audit --audit-level moderate
+        language: system
+        files: package-lock\.json$
+        pass_filenames: false
+        description: Run npm audit to check for vulnerabilities
+
+  # Build check
+  - repo: local
+    hooks:
+      - id: build-check
+        name: Build check
+        entry: npm run build
+        language: system
+        files: \.(ts|json)$
+        pass_filenames: false
+        description: Ensure the project builds successfully

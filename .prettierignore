@@ -1,0 +1,23 @@
+# Ignore build outputs
+dist/
+coverage/
+
+# Ignore dependencies
+node_modules/
+
+# Ignore lock files
+package-lock.json
+yarn.lock
+
+# Ignore logs
+*.log
+
+# Ignore generated files
+*.d.ts.map
+*.js.map
+
+# Ignore environment files
+.env*
+
+# Ignore OS files
+.DS_Store
